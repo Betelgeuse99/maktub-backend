@@ -1,0 +1,4 @@
+project_id = "zmolotveyvkplfrgrqqw"
+
+[functions.maktub]
+verify_jwt = false

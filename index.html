@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maktub — Network Dashboard</title>
+<style>
+  :root{
+    --bg:#060b18; --bg2:#0a1222; --card:#0d1729; --card2:#111d33;
+    --border:#1b2a45; --text:#e6eefc; --muted:#8fa3c4; --faint:#5c6f8f;
+    --cyan:#22d3ee; --cyan-soft:rgba(34,211,238,.12);
+    --violet:#8b5cf6; --violet-soft:rgba(139,92,246,.12);
+    --green:#34d399; --green-soft:rgba(52,211,153,.12);
+    --amber:#fbbf24; --amber-soft:rgba(251,191,36,.12);
+    --red:#f87171; --red-soft:rgba(248,113,113,.12);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, rgba(139,92,246,.14), transparent 60%),
+               radial-gradient(1000px 500px at 0% 0%, rgba(34,211,238,.10), transparent 55%),
+               var(--bg);
+    color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  .hidden{display:none!important}
+  a{color:var(--cyan);text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  .view{min-height:100vh}
+  /* login */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .auth-card{width:100%;max-width:410px;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--border);border-radius:22px;padding:36px 32px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+  .brand-mark{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#04101d;letter-spacing:-.5px}
+  .brand-name{font-size:20px;font-weight:800;letter-spacing:.18em}
+  .brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:600}
+  input{width:100%;background:#081120;border:1px solid var(--border);border-radius:11px;padding:13px 14px;color:var(--text);font-size:15px;outline:none;transition:border .2s,box-shadow .2s}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--border);background:var(--card2);color:var(--text);border-radius:11px;padding:12px 18px;font-size:14px;font-weight:600;transition:all .18s}
+  .btn:hover{border-color:#2a3f63;background:#14223c}
+  .btn-primary{background:linear-gradient(135deg,var(--cyan),#0ea5e9);border:none;color:#03121e;font-weight:800}
+  .btn-primary:hover{filter:brightness(1.06)}
+  .btn-block{width:100%;margin-top:24px;padding:14px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .err{color:var(--red);font-size:13px;margin-top:14px;min-height:18px}
+  .auth-foot{margin-top:22px;font-size:12px;color:var(--faint);text-align:center;line-height:1.6}
+  /* app shell */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 26px;border-bottom:1px solid var(--border);background:rgba(6,11,24,.75);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20}
+  .topbar .brand{margin:0}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px}
+  .icon-btn:hover{color:var(--text);border-color:#2a3f63}
+  main{max-width:1280px;margin:0 auto;padding:28px 22px 70px}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .back{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-bottom:14px;cursor:pointer}
+  .back:hover{color:var(--text)}
+  /* cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+  .net-card{position:relative;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--border);border-radius:var(--radius);padding:22px;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;overflow:hidden}
+  .net-card:hover{transform:translateY(-2px);border-color:#2b4a76;box-shadow:0 18px 44px rgba(0,0,0,.35)}
+  .net-card::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--violet));opacity:.75}
+  .net-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}
+  .net-name{font-size:17px;font-weight:750;letter-spacing:-.01em}
+  .net-sync{font-size:11px;color:var(--faint);margin-top:4px}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px}
+  .dot.live{background:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+  .dot.stale{background:var(--amber);box-shadow:0 0 0 4px var(--amber-soft)}
+  .dot.off{background:var(--faint)}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .metric{background:#081120;border:1px solid #16243c;border-radius:12px;padding:12px 10px;text-align:center}
+  .metric b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em}
+  .metric span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+  .net-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid #14223a;font-size:12px;color:var(--muted)}
+  .net-foot strong{color:var(--green)}
+  .arrow{color:var(--faint)}
+  .empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius)}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+  .stat-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .stat b{display:block;font-size:28px;font-weight:800;margin-top:12px;letter-spacing:-.03em}
+  .stat small{color:var(--faint);font-size:11px}
+  .stat.online b{color:var(--green)} .stat.expired b{color:var(--red)} .stat.revenue b{color:var(--amber)}
+  .panels{display:grid;grid-template-columns:1.65fr 1fr;gap:18px}
+  @media(max-width:980px){.panels{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .panel-title{font-size:14px;font-weight:700}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{padding:6px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;text-transform:capitalize}
+  .tab.active{background:var(--cyan-soft);border-color:rgba(34,211,238,.35);color:var(--cyan)}
+  .search{background:#081120;border:1px solid var(--border);border-radius:9px;padding:8px 11px;color:var(--text);font-size:12px;width:190px;outline:none}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:11px 14px;color:var(--faint);font-size:10px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:11px 14px;border-bottom:1px solid #101c31;color:var(--muted);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.name{color:var(--text);font-weight:650}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .pill.live{background:var(--green-soft);color:var(--green)}
+  .pill.exp{background:var(--red-soft);color:var(--red)}
+  .pill.wait{background:var(--amber-soft);color:var(--amber)}
+  .muted{color:var(--faint)}
+  .pager{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+  .pager button{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:12px}
+  .pager button:disabled{opacity:.35;cursor:not-allowed}
+  .activity{max-height:520px;overflow-y:auto}
+  .act{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid #101c31}
+  .act:last-child{border-bottom:none}
+  .act-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 26px;background:var(--violet-soft);color:var(--violet)}
+  .act-ic.ok{background:var(--green-soft);color:var(--green)}
+  .act-ic.warn{background:var(--amber-soft);color:var(--amber)}
+  .act-msg{font-size:12.5px;color:var(--text);line-height:1.45}
+  .act-time{font-size:10.5px;color:var(--faint);margin-top:3px}
+  /* pay */
+  .pay-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .pay-card{width:100%;max-width:460px;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--border);border-radius:22px;padding:38px 32px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .lock{width:58px;height:58px;border-radius:18px;margin:0 auto 18px;background:var(--amber-soft);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:26px}
+  .pay-amount{font-size:42px;font-weight:800;letter-spacing:-.03em;margin:10px 0 4px}
+  .pay-note{color:var(--muted);font-size:13px;line-height:1.6}
+  .pay-break{background:#081120;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:22px 0;font-size:12.5px;color:var(--muted);text-align:left}
+  .pay-break div{display:flex;justify-content:space-between;padding:4px 0}
+  /* toast + modal */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0f1d33;border:1px solid #28405f;color:var(--text);padding:12px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:60;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .modal{position:fixed;inset:0;background:rgba(2,6,15,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal-card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px}
+  .modal-card h3{font-size:17px;margin-bottom:6px}
+  .modal-card p{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .modal-actions .btn{flex:1}
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .skel{background:linear-gradient(90deg,#0d1729,#14223c,#0d1729);background-size:200% 100%;animation:sk 1.2s ease-in-out infinite;border-radius:10px}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  @media(max-width:620px){
+    .topbar{padding:14px 16px}
+    main{padding:20px 14px 60px}
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="view">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-mark">M</div>
+        <div>
+          <div class="brand-name">MAKTUB</div>
+          <div class="brand-sub">Network Control</div>
+        </div>
+      </div>
+      <h1 style="font-size:20px">Sign in</h1>
+      <p class="sub">One login. All your networks.</p>
+      <form id="loginForm">
+        <label for="u">Username</label>
+        <input id="u" autocomplete="username" required>
+        <label for="p">Password</label>
+        <input id="p" type="password" autocomplete="current-password" required>
+        <button class="btn btn-primary btn-block" id="loginBtn" type="submit">Sign in</button>
+        <div class="err" id="loginErr"></div>
+      </form>
+      <div class="auth-foot">Maktub dashboard · manual MikroTik networks</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAY / LOCKED -->
+<div id="payView" class="view hidden">
+  <div class="pay-wrap">
+    <div class="pay-card">
+      <div class="lock">🔒</div>
+      <h1 style="font-size:21px">Subscription due</h1>
+      <p class="pay-note" id="payLead">Your dashboard and networks are locked until the licence is renewed.</p>
+      <div class="pay-amount" id="payAmount">₦0</div>
+      <div class="pay-note" id="payDue"></div>
+      <div class="pay-break" id="payBreak"></div>
+      <button class="btn btn-primary btn-block" id="payBtn">Pay now</button>
+      <div class="err" id="payErr"></div>
+      <button class="btn btn-block" id="payLogout" style="margin-top:10px;background:transparent;border-color:transparent;color:var(--faint)">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView" class="view hidden">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div>
+        <div class="brand-name">MAKTUB</div>
+        <div class="brand-sub" id="tenantLine">Network Control</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="pwBtn" title="Change password">⚙</button>
+      <button class="icon-btn" id="refreshBtn" title="Refresh">⟳</button>
+      <button class="icon-btn" id="logoutBtn" title="Sign out">⏻</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- CARDS -->
+    <section id="cardsView">
+      <div class="page-head">
+        <div>
+          <h1>Networks</h1>
+          <div class="sub" id="cardsSub">Loading…</div>
+        </div>
+      </div>
+      <div class="grid" id="cardsGrid"></div>
+    </section>
+
+    <!-- NETWORK -->
+    <section id="networkView" class="hidden">
+      <div class="back" id="backBtn">← All networks</div>
+      <div class="page-head">
+        <div>
+          <h1 id="netTitle">Network</h1>
+          <div class="sub" id="netSub"></div>
+        </div>
+      </div>
+      <div class="stats" id="netStats"></div>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Users</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input class="search" id="userSearch" placeholder="Search user or MAC…">
+              <div class="tabs" id="statusTabs">
+                <button class="tab active" data-status="all">All</button>
+                <button class="tab" data-status="online">Online</button>
+                <button class="tab" data-status="active">Active</button>
+                <button class="tab" data-status="expired">Expired</button>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Plan</th><th>MAC</th><th>Status</th><th>Expires</th><th>Last seen</th></tr></thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <span id="pageInfo">—</span>
+            <div style="display:flex;gap:8px">
+              <button id="prevPage">Prev</button>
+              <button id="nextPage">Next</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Activity</div></div>
+          <div class="activity" id="activityList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- PASSWORD MODAL -->
+<div id="pwModal" class="modal hidden">
+  <div class="modal-card">
+    <h3>Change password</h3>
+    <p>At least 8 characters. Other sessions will be signed out.</p>
+    <label for="pwCurrent">Current password</label>
+    <input id="pwCurrent" type="password" autocomplete="current-password">
+    <label for="pwNew">New password</label>
+    <input id="pwNew" type="password" autocomplete="new-password">
+    <div class="err" id="pwErr"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pwCancel">Cancel</button>
+      <button class="btn btn-primary" id="pwSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://zmolotveyvkplfrgrqqw.supabase.co/functions/v1/maktub";
+const $ = (id) => document.getElementById(id);
+let sid = sessionStorage.getItem("maktub_sid") || "";
+const state = { networks: [], tenant: null, slug: "", page: 1, pages: 1, status: "all", search: "", timer: null };
+
+const money = (n) => "₦" + Number(n || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 });
+function when(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
+  return d.toLocaleString("en-NG", {
+    timeZone: "Africa/Lagos", day: "2-digit", month: "short",
+    hour: "2-digit", minute: "2-digit", hour12: true,
+  });
+}
+function ago(iso) {
+  if (!iso) return "never";
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return s + "s ago";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+}
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+function show(id) {
+  ["loginView", "payView", "appView"].forEach((v) => $(v).classList.add("hidden"));
+  $(id).classList.remove("hidden");
+}
+function showLogin() {
+  if (state.timer) clearInterval(state.timer);
+  sessionStorage.removeItem("maktub_sid"); sid = "";
+  show("loginView");
+}
+function showPay(data) {
+  if (state.timer) clearInterval(state.timer);
+  const n = data?.network_count ?? 2;
+  const amount = data?.amount_due ?? n * 5000;
+  $("payAmount").textContent = money(amount);
+  $("payDue").textContent = data?.paid_until
+    ? "Licence expired " + ago(data.paid_until) + "."
+    : "Your licence has expired.";
+  $("payBreak").innerHTML =
+    "<div><span>" + n + " networks × ₦5,000</span><span>" + money(amount) + "</span></div>" +
+    "<div><span>Billing date</span><span>10th of every month</span></div>" +
+    "<div><span>Grace period</span><span>None</span></div>";
+  show("payView");
+}
+
+async function api(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (sid) headers["x-session-id"] = sid;
+  const res = await fetch(API + path, { ...opts, headers });
+  let data = null;
+  try { data = await res.json(); } catch (_) {}
+  if (res.status === 401) { showLogin(); throw new Error("unauthorized"); }
+  if (res.status === 402) { showPay(data); throw new Error("subscription"); }
+  if (!res.ok) throw new Error(data?.error || "Request failed");
+  return data;
+}
+
+/* ---------- login ---------- */
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("loginBtn"); const err = $("loginErr");
+  err.textContent = ""; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Signing in…';
+  try {
+    const res = await fetch(API + "/api/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: $("u").value.trim(), password: $("p").value }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || "Login failed");
+    sid = data.sessionId;
+    sessionStorage.setItem("maktub_sid", sid);
+    await boot();
+  } catch (ex) {
+    err.textContent = ex.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Sign in";
+  }
+});
+$("logoutBtn").addEventListener("click", async () => {
+  try { await api("/api/logout", { method: "POST" }); } catch (_) {}
+  showLogin();
+});
+$("payLogout").addEventListener("click", () => { showLogin(); });
+
+/* ---------- boot / cards ---------- */
+async function boot() {
+  const d = await api("/api/networks");
+  state.networks = d.networks; state.tenant = d.tenant;
+  $("tenantLine").textContent = d.tenant.network_count + " networks · till " + when(d.tenant.paid_until).split(",")[0];
+  $("cardsSub").textContent =
+    d.tenant.network_count + " network" + (d.tenant.network_count === 1 ? "" : "s") +
+    " · licence active until " + when(d.tenant.paid_until);
+  renderCards(d.networks);
+  show("appView");
+  state.slug = "";
+  $("cardsView").classList.remove("hidden");
+  $("networkView").classList.add("hidden");
+  if (state.timer) clearInterval(state.timer);
+  state.timer = setInterval(() => { if (!state.slug) bootCardsOnly(); }, 30000);
+}
+async function bootCardsOnly() {
+  try {
+    const d = await api("/api/networks");
+    state.networks = d.networks; state.tenant = d.tenant;
+    renderCards(d.networks);
+  } catch (_) {}
+}
+function renderCards(nets) {
+  const grid = $("cardsGrid");
+  if (!nets.length) {
+    grid.innerHTML = '<div class="empty">No networks yet.<br><span class="muted">Add a row to the networks table to show a card.</span></div>';
+    return;
+  }
+  grid.innerHTML = nets.map((n) => {
+    const fresh = n.last_sync && (Date.now() - new Date(n.last_sync).getTime() < 10 * 60 * 1000);
+    const dot = fresh ? "live" : (n.last_sync ? "stale" : "off");
+    return `
+      <div class="net-card" data-slug="${n.slug}">
+        <div class="net-top">
+          <div>
+            <div class="net-name">${esc(n.name)}</div>
+            <div class="net-sync"><span class="dot ${dot}"></span>${n.last_sync ? "synced " + ago(n.last_sync) : "no sync yet"}</div>
+          </div>
+          <div class="arrow">→</div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><b style="color:var(--green)">${n.online}</b><span>Online</span></div>
+          <div class="metric"><b>${n.active}</b><span>Active</span></div>
+          <div class="metric"><b style="color:var(--red)">${n.expired}</b><span>Expired</span></div>
+          <div class="metric"><b>${n.total}</b><span>Total</span></div>
+        </div>
+        <div class="net-foot">
+          <span>Today <strong>${money(n.revenue_today)}</strong></span>
+          <span>${money(n.revenue_month)} this month</span>
+        </div>
+      </div>`;
+  }).join("");
+  grid.querySelectorAll(".net-card").forEach((el) =>
+    el.addEventListener("click", () => openNetwork(el.dataset.slug)));
+}
+
+/* ---------- network ---------- */
+async function openNetwork(slug) {
+  state.slug = slug; state.page = 1; state.status = "all"; state.search = "";
+  $("userSearch").value = "";
+  document.querySelectorAll("#statusTabs .tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.status === "all"));
+  $("cardsView").classList.add("hidden");
+  $("networkView").classList.remove("hidden");
+  $("netTitle").textContent = "Loading…";
+  $("netStats").innerHTML = "";
+  $("usersBody").innerHTML = "";
+  await refreshNetwork(slug);
+  if (state.timer) clearInterval(state.timer);
+  state.timer = setInterval(() => refreshNetwork(slug, true), 60000);
+}
+async function refreshNetwork(slug, quiet = false) {
+  try {
+    const d = await api("/api/network/" + encodeURIComponent(slug));
+    const n = d.network, s = d.stats;
+    $("netTitle").textContent = n.name;
+    $("netSub").innerHTML = `<span class="dot ${n.last_sync && (Date.now() - new Date(n.last_sync).getTime() < 600000) ? "live" : "stale"}"></span>` +
+      (n.last_sync ? "Last sync " + ago(n.last_sync) : "Waiting for first sync");
+    $("netStats").innerHTML = `
+      ${stat("online", "Online now", s.online, "in the last 3 minutes")}
+      ${stat("", "Active", s.active, "valid vouchers")}
+      ${stat("expired", "Expired", s.expired, "ended vouchers")}
+      ${stat("", "Total", s.total, "all time")}
+      ${stat("revenue", "Today", money(s.revenue_today), "voucher revenue")}
+      ${stat("", "This month", money(s.revenue_month), money(s.revenue_week) + " this week")}
+    `;
+    if (!quiet) { await loadUsers(1); await loadActivity(); }
+  } catch (ex) {
+    if (ex.message !== "unauthorized" && ex.message !== "subscription") toast(ex.message);
+  }
+}
+function stat(cls, label, value, sub) {
+  return `<div class="stat ${cls}"><div class="stat-top"><span>${label}</span></div><b>${value}</b><small>${sub}</small></div>`;
+}
+async function loadUsers(page) {
+  if (!state.slug) return;
+  state.page = page;
+  const q = new URLSearchParams({
+    page: String(page), limit: "25", status: state.status, search: state.search,
+  });
+  try {
+    const d = await api(`/api/network/${encodeURIComponent(state.slug)}/users?${q}`);
+    state.pages = d.pages;
+    $("usersBody").innerHTML = d.data.length ? d.data.map((u) => `
+      <tr>
+        <td class="name">${esc(u.username)}</td>
+        <td>${planName(u.plan)}</td>
+        <td class="muted">${esc(u.mac || "—")}</td>
+        <td>${statusPill(u)}</td>
+        <td>${u.expires_at ? when(u.expires_at) : "—"}</td>
+        <td>${u.last_seen ? ago(u.last_seen) : "—"}</td>
+      </tr>`).join("") : '<tr><td colspan="6" style="text-align:center;padding:34px;color:var(--faint)">No users yet</td></tr>';
+    $("pageInfo").textContent = d.total
+      ? `${(page - 1) * 25 + 1}–${Math.min(page * 25, d.total)} of ${d.total}`
+      : "0 users";
+    $("prevPage").disabled = page <= 1;
+    $("nextPage").disabled = page >= d.pages;
+  } catch (ex) {
+    if (!["unauthorized", "subscription"].includes(ex.message)) toast(ex.message);
+  }
+}
+function planName(p) {
+  return ({ "24hr": "Daily", "3d": "3-Day", "5d": "5-Day", "7d": "Weekly", "14d": "2-Week", "30d": "Monthly", "6h": "6-Hour" })[p] || (p || "—");
+}
+function statusPill(u) {
+  if (u.online) return '<span class="pill live">● Online</span>';
+  if (u.status === "expired") return '<span class="pill exp">Expired</span>';
+  return '<span class="pill wait">Active</span>';
+}
+async function loadActivity() {
+  if (!state.slug) return;
+  try {
+    const d = await api(`/api/network/${encodeURIComponent(state.slug)}/activity`);
+    $("activityList").innerHTML = d.data.length ? d.data.map((a) => {
+      const ic = a.level === "subscription" ? "💳" : a.level === "sync" ? "⟳" : a.level === "auth" ? "🔑" : "•";
+      const cls = a.level === "subscription" ? "ok" : a.level === "sync" ? "" : "warn";
+      return `<div class="act"><div class="act-ic ${cls}">${ic}</div><div><div class="act-msg">${esc(a.message)}</div><div class="act-time">${when(a.created_at)}</div></div></div>`;
+    }).join("") : '<div class="act"><div class="act-msg muted">No activity yet</div></div>';
+  } catch (_) {}
+}
+$("backBtn").addEventListener("click", () => {
+  state.slug = "";
+  if (state.timer) clearInterval(state.timer);
+  $("networkView").classList.add("hidden");
+  $("cardsView").classList.remove("hidden");
+  bootCardsOnly();
+});
+$("refreshBtn").addEventListener("click", () => state.slug ? refreshNetwork(state.slug) : bootCardsOnly());
+$("prevPage").addEventListener("click", () => { if (state.page > 1) loadUsers(state.page - 1); });
+$("nextPage").addEventListener("click", () => { if (state.page < state.pages) loadUsers(state.page + 1); });
+let searchTimer = null;
+$("userSearch").addEventListener("input", (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = e.target.value.trim(); loadUsers(1); }, 350);
+});
+document.querySelectorAll("#statusTabs .tab").forEach((t) => t.addEventListener("click", () => {
+  document.querySelectorAll("#statusTabs .tab").forEach((x) => x.classList.remove("active"));
+  t.classList.add("active");
+  state.status = t.dataset.status;
+  loadUsers(1);
+}));
+
+/* ---------- pay ---------- */
+$("payBtn").addEventListener("click", async () => {
+  const btn = $("payBtn"); const err = $("payErr");
+  err.textContent = ""; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Opening checkout…';
+  try {
+    const d = await fetch(API + "/api/subscription/initiate", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json());
+    if (!d.checkout_url) throw new Error(d.error || "Could not start payment");
+    location.href = d.checkout_url;
+  } catch (ex) {
+    err.textContent = ex.message;
+    btn.disabled = false; btn.textContent = "Pay now";
+  }
+});
+
+/* ---------- password ---------- */
+$("pwBtn").addEventListener("click", () => { $("pwModal").classList.remove("hidden"); $("pwErr").textContent = ""; });
+$("pwCancel").addEventListener("click", () => $("pwModal").classList.add("hidden"));
+$("pwSave").addEventListener("click", async () => {
+  const btn = $("pwSave"); const err = $("pwErr");
+  err.textContent = ""; btn.disabled = true;
+  try {
+    await api("/api/change-password", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword: $("pwCurrent").value, newPassword: $("pwNew").value }),
+    });
+    toast("Password changed");
+    $("pwModal").classList.add("hidden");
+    $("pwCurrent").value = ""; $("pwNew").value = "";
+  } catch (ex) { err.textContent = ex.message; }
+  finally { btn.disabled = false; }
+});
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ---------- start ---------- */
+(async () => {
+  const params = new URLSearchParams(location.search);
+  if (params.get("subscribed")) setTimeout(() => toast("Payment received — refreshing…"), 400);
+  if (!sid) { show("loginView"); return; }
+  try { await boot(); }
+  catch (ex) {
+    if (ex.message === "subscription") return;
+    show("loginView");
+  }
+})();
+</script>
+</body>
+</html>
